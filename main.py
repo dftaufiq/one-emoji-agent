@@ -54,12 +54,19 @@ def main() -> None:
     out_dir = os.environ.get("OUTPUT_DIR", "/output")
     os.makedirs(out_dir, exist_ok=True)
     path = os.path.join(out_dir, "entry.txt")
-    with open(path, "w", encoding="utf-8") as f:
-        f.write(EMOJI)
+    # Write as explicit UTF-8 bytes: no platform newline translation can
+    # ever sneak a trailing newline or line-ending change into the entry.
+    with open(path, "wb") as f:
+        f.write(EMOJI.encode("utf-8"))
     # Read it back: the file the grader gates must be byte-identical to
     # the validated glyph, with no trailing newline added by accident.
-    with open(path, "r", encoding="utf-8") as f:
-        written = f.read()
+    with open(path, "rb") as f:
+        raw = f.read()
+    written = raw.decode("utf-8")
+    if len(written) != 1:
+        print(f"ERROR: entry.txt holds {len(written)} chars, expected exactly 1",
+              file=sys.stderr)
+        sys.exit(1)
     if written != EMOJI:
         print(f"ERROR: entry.txt holds {written!r}, expected {EMOJI!r}",
               file=sys.stderr)
